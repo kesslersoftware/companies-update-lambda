@@ -72,7 +72,7 @@ public class UpdateCompaniesHandlerTest {
     @Test
     public void testMissingCompanyIdReturns400() throws Exception {
         Companies invalidCompany = buildValidCompany();
-        invalidCompany.setCompany_id("");
+        invalidCompany.setCompany_name("");
 
         APIGatewayProxyRequestEvent event = new APIGatewayProxyRequestEvent()
                 .withBody(objectMapper.writeValueAsString(invalidCompany));

@@ -43,7 +43,17 @@ public class UpdateCompaniesHandler implements RequestHandler<APIGatewayProxyReq
                         .withStatusCode(400)
                         .withBody("{\"error\":\"Invalid input\"}");
             }
-            boolean updatedCompany = updateCompany(input);
+            boolean updatedCompany = false;
+            boolean insert = false;
+            if(input.getCompany_id()==null) {
+                insert = true;
+            }
+            if(insert) {
+                updatedCompany = insertCompany(input);
+            } else {
+                updatedCompany = updateCompany(input);
+            }
+
             if(!updatedCompany) {
                 return new APIGatewayProxyResponseEvent()
                         .withStatusCode(500)
@@ -62,8 +72,7 @@ public class UpdateCompaniesHandler implements RequestHandler<APIGatewayProxyReq
     }
 
     private boolean checkCompany(Companies company) {
-        if(company.getCompany_id()==null || company.getCompany_id().isEmpty() ||
-        company.getCompany_name()==null || company.getCompany_name().isEmpty() ||
+        if(company.getCompany_name()==null || company.getCompany_name().isEmpty() ||
         company.getCeo()==null || company.getCeo().isEmpty() ||
         company.getCity()==null || company.getCity().isEmpty() ||
         company.getIndustry()==null || company.getIndustry().isEmpty() ||
@@ -78,6 +87,40 @@ public class UpdateCompaniesHandler implements RequestHandler<APIGatewayProxyReq
         }
         return true;
     }
+    private boolean insertCompany(Companies company) {
+        // Generate a new UUID for the company_id
+        String companyId = UUID.randomUUID().toString();
+        company.setCompany_id(companyId);
+
+        // Build the item map
+        Map<String, AttributeValue> item = Map.ofEntries(
+                Map.entry("company_id", AttributeValue.fromS(companyId)),
+                Map.entry("company_name", AttributeValue.fromS(company.getCompany_name())),
+                Map.entry("description", AttributeValue.fromS(company.getDescription())),
+                Map.entry("industry", AttributeValue.fromS(company.getIndustry())),
+                Map.entry("city", AttributeValue.fromS(company.getCity())),
+                Map.entry("state", AttributeValue.fromS(company.getState())),
+                Map.entry("zip", AttributeValue.fromS(company.getZip())),
+                Map.entry("employees", AttributeValue.fromN(Integer.toString(company.getEmployees()))),
+                Map.entry("revenue", AttributeValue.fromN(Long.toString(company.getRevenue()))),
+                Map.entry("valuation", AttributeValue.fromN(Long.toString(company.getValuation()))),
+                Map.entry("profits", AttributeValue.fromN(Long.toString(company.getProfits()))),
+                Map.entry("stock_symbol", AttributeValue.fromS(company.getStock_symbol())),
+                Map.entry("ceo", AttributeValue.fromS(company.getCeo())),
+                Map.entry("boycott_count", AttributeValue.fromN(Integer.toString(company.getBoycott_count())))
+        );
+
+        // Construct the PutItemRequest
+        PutItemRequest putRequest = PutItemRequest.builder()
+                .tableName("companies")
+                .item(item)
+                .build();
+
+        // Execute the insert
+        dynamoDb.putItem(putRequest);
+        return true;
+    }
+
     private boolean updateCompany(Companies company) {
         String companyId = company.getCompany_id();
 
